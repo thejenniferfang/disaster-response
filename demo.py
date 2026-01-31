@@ -42,10 +42,69 @@ class ExtractedDisaster(BaseModel):
     disasters: list[Disaster] = Field(description="List of disasters") # list of disasters extracted from the urls
     urls: list[str] = Field(description="List of urls") # list of urls from which the disasters were extracted
 
+class NGOCapability(str, Enum):
+    """Capabilities/specializations of NGOs."""
+    SEARCH_AND_RESCUE = "search_and_rescue"
+    MEDICAL_AID = "medical_aid"
+    FOOD_AND_WATER = "food_and_water"
+    SHELTER = "shelter"
+    EVACUATION = "evacuation"
+    REBUILDING = "rebuilding"
+    PSYCHOLOGICAL_SUPPORT = "psychological_support"
+    LOGISTICS = "logistics"
+    COMMUNICATIONS = "communications"
+    GENERAL_RELIEF = "general_relief"
 
-class NGO:
-    def __init__(self, name: str):
-        self.name = name
+
+class NGOType(str, Enum):
+    """High-level NGO category (small fixed set, good for validation)."""
+
+    LOCAL = "local"
+    NATIONAL = "national"
+    INTERNATIONAL = "international"
+    GOVERNMENT_PARTNER = "government_partner"
+    OTHER = "other"
+
+
+class VerificationStatus(str, Enum):
+    """Verification state for credibility / filtering."""
+
+    UNVERIFIED = "unverified"
+    VERIFIED = "verified"
+    FLAGGED = "flagged"
+
+class NGO(BaseModel):
+    """An NGO that can respond to disasters."""
+    
+    id: Optional[str] = Field(default=None, description="MongoDB ObjectId as string")
+    
+    # Core info
+    name: str
+    description: Optional[str] = None
+    ngo_type: NGOType = NGOType.OTHER
+    verification_status: VerificationStatus = VerificationStatus.UNVERIFIED
+    
+    # Contact
+    email: str  # Primary contact email
+    contact_name: Optional[str] = None
+    phone: Optional[str] = None
+    website: Optional[str] = None
+    
+    # Capabilities and coverage
+    capabilities: list[NGOCapability] = Field(default_factory=list)
+    disaster_types: list[str] = Field(default_factory=list)  # DisasterType values they handle
+    
+    # Geographic coverage
+    countries: list[str] = Field(default_factory=list)  # Countries they operate in
+    regions: list[str] = Field(default_factory=list)  # Specific regions
+    is_global: bool = False  # Operates worldwide
+    
+    # Status
+    active: bool = True
+    
+    class Config:
+        use_enum_values = True
+
 
 # run a function which "takes in" a list of url news sources and returns a list of disasters
 def find_disasters(urls: list[str]):
@@ -60,7 +119,7 @@ def find_ngos(disaster: Disaster):
 def send_email(ngo: NGO, disaster: Disaster):
     print(f"Sending email to {ngo.name} for disaster: {disaster.title}")
 
-result = app.agent(
+disasters_result = app.agent(
     prompt="Extract the disasters from the following urls: {urls}",
     schema=ExtractedDisaster,
     urls=["https://www.google.com", "https://www.yahoo.com", "https://www.bing.com", "newyorktimes.com", "sfchronicle.com"]

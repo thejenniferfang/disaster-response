@@ -19,6 +19,24 @@ class NGOCapability(str, Enum):
     GENERAL_RELIEF = "general_relief"
 
 
+class NGOType(str, Enum):
+    """High-level NGO category (small fixed set, good for validation)."""
+
+    LOCAL = "local"
+    NATIONAL = "national"
+    INTERNATIONAL = "international"
+    GOVERNMENT_PARTNER = "government_partner"
+    OTHER = "other"
+
+
+class VerificationStatus(str, Enum):
+    """Verification state for credibility / filtering."""
+
+    UNVERIFIED = "unverified"
+    VERIFIED = "verified"
+    FLAGGED = "flagged"
+
+
 class NGO(BaseModel):
     """An NGO that can respond to disasters."""
     
@@ -27,6 +45,8 @@ class NGO(BaseModel):
     # Core info
     name: str
     description: Optional[str] = None
+    ngo_type: NGOType = NGOType.OTHER
+    verification_status: VerificationStatus = VerificationStatus.UNVERIFIED
     
     # Contact
     email: str  # Primary contact email
