@@ -1,12 +1,18 @@
 from firecrawl import FirecrawlApp
 from pydantic import BaseModel, Field
-from typing import List, Optional, Enum
+from typing import List, Optional
+from enum import Enum
 from src.config import config
 import resend
+from typing import Tuple
 
 app = FirecrawlApp(api_key="fc-29a5fd3db63d4b1fb909b232de75a074")
-app_resend = resend(api_key="re_MPbsi958_26tHbygWsVLXT6W9rMmdDqkD")
+resend.api_key = "re_MPbsi958_26tHbygWsVLXT6W9rMmdDqkD"
 
+SEND_TO_DEMO_EMAIL = True
+DEMO_EMAIL = "emergencydisasterdemo@gmail.com"
+NUM_DISASTERS = 2
+NUM_NGOS = 2
 class DisasterType(str, Enum):
     """Types of disasters the system can detect."""
     EARTHQUAKE = "earthquake"
@@ -65,11 +71,11 @@ class NGOList(BaseModel):
 def find_disasters() -> DisasterList:
     print("Finding disasters...")
     return app.agent(
-        prompt='''
-        Search news sources for the 5 most significant global disasters that occurred in the LAST 24 HOURS ONLY.
+        prompt=f'''
+        Search news sources for the {NUM_DISASTERS} most significant global disasters that occurred in the LAST 24 HOURS ONLY.
         CRITICAL: Only include disasters that started or significantly escalated within the past 24 hours. 
         Reject any disaster older than 24 hours, even if still ongoing.
-        Return exactly 5 disasters, prioritized by severity and humanitarian impact.
+        Return exactly {NUM_DISASTERS} disasters, prioritized by severity and humanitarian impact.
         Include: earthquakes, floods, fires, storms, landslides, industrial accidents.
         Only disasters where NGOs could provide aid (populated areas, significant casualties or displacement)
         ''',
@@ -79,10 +85,10 @@ def find_disasters() -> DisasterList:
 
 # for each disaster different function finds relevant NGOs
 def find_ngos(disaster: Disaster) -> NGOList:
-    print(f"Finding NGOs for disaster: {disaster.title}")
+    print(f"Finding NGOs for disaster: {disaster.name}")
     return app.agent(
         prompt=f'''
-        Find 5 MAXIMUM distinct NGOs that could assist with this disaster: {disaster}
+        Find {NUM_NGOS} MAXIMUM distinct NGOs that could assist with this disaster: {disaster}
 
         CRITICAL: You MUST find a real contact email for each NGO. Visit their website's contact page to find it.
         - Only include NGOs where you can find an actual contact email address
@@ -94,26 +100,61 @@ def find_ngos(disaster: Disaster) -> NGOList:
     )
 
 # for each NGO, email is sent with disaster information
-def send_email(ngo: NGO, disaster: Disaster):
-    print(f"Sending email to {ngo.name} for disaster: {disaster.title}")
-    def send_email(to_email: str, subject: str, html: str, reply_to: str | None = None):
-        params = {
-            "from": config.from_email,      # e.g. "Acme <onboarding@resend.dev>"
-            "to": [to_email],              # must be a list
-            "subject": subject,
-            "html": html,
-        }
-        if reply_to:
-            params["reply_to"] = reply_to
+def send_emails(ngoDisasterList: List[Tuple[NGO, Disaster]]):
+    params: List[resend.Emails.SendParams] = [
+        {
+            "from": "onboarding@resend.dev",
+            "to": [DEMO_EMAIL if SEND_TO_DEMO_EMAIL else ngo.email],
+            "subject": f"{"[to " + ngo.email + "] " if SEND_TO_DEMO_EMAIL else ""}Disaster Alert: {disaster.name}",
+            "html": f"""
+            <html>
+            <body>
+                <h2>Urgent Disaster Response Alert</h2>
+                
+                <p>Dear {ngo.name} Team,</p>
+                
+                <p>We are reaching out to you because your organization has been identified as a potential responder for a recent disaster that requires immediate humanitarian assistance.</p>
+                
+                <h3>Disaster Information:</h3>
+                <ul>
+                    <li><strong>Name:</strong> {disaster.name}</li>
+                    <li><strong>Type:</strong> {disaster.disaster_type.value}</li>
+                    <li><strong>Severity:</strong> {disaster.severity.value}</li>
+                    <li><strong>Location:</strong> {disaster.location}, {disaster.country}</li>
+                    <li><strong>Region:</strong> {disaster.region}</li>
+                    <li><strong>Occurred:</strong> {disaster.occurred_at}</li>
+                    <li><strong>Coordinates:</strong> {disaster.latitude}, {disaster.longitude}</li>
+                    <li><strong>Source:</strong> <a href="{disaster.source_url}">{disaster.source_name}</a></li>
+                </ul>
+                
+                <p>Your organization's expertise in <strong>{ngo.aid_type}</strong> could be crucial in providing relief to those affected by this disaster.</p>
+                
+                <p>If your organization is able to respond or coordinate relief efforts, please consider taking action as soon as possible. Time is critical in disaster response situations.</p>
+                
+                <p>For more information about this disaster, please visit the source link above or contact local emergency management authorities.</p>
+                
+                <p>Thank you for your continued commitment to humanitarian aid and disaster relief.</p>
+                
+                <p>Best regards,<br>
+                Disaster Response Notification System</p>
+                
+                <hr>
+                <p><small>This is an automated alert system designed to connect NGOs with disaster response opportunities. If you believe you received this message in error, please contact us.</small></p>
+            </body>
+            </html>
+            """,
+        } for ngo, disaster in ngoDisasterList
+    ]
 
-        return resend.Emails.send(params)
+    return resend.Emails.send(params)
 
 # 1) extract disasters
-disasters = find_disasters()
-if not disasters:
-    print("No disasters found")
-    exit()
 
-for disaster in disasters:
+disasterlist: DisasterList = find_disasters()
+ngoDisasterList: List[Tuple[NGO, Disaster]] = []
+for disaster in disasterlist.disasters:
     ngos = find_ngos(disaster)
-    send_email(ngos, disaster)
+    ngoDisasterList.extend([(ngo, disaster) for ngo in ngos.ngos])
+print(f"Sending emails")
+print(ngoDisasterList)
+send_emails(ngoDisasterList)
