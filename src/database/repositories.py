@@ -154,8 +154,8 @@ class NotificationRepository:
         docs = self._collection.find({"disaster_id": disaster_id})
         return [_from_document(doc, Notification) for doc in docs]
     
-    def update_status(self, notification_id: str, status: str, 
-                      resend_id: Optional[str] = None, 
+    def update_status(self, notification_id: str, status: str,
+                      resend_id: Optional[str] = None,
                       error: Optional[str] = None) -> None:
         """Update notification status."""
         update = {"$set": {"status": status}}
@@ -166,6 +166,37 @@ class NotificationRepository:
         self._collection.update_one(
             {"_id": _to_object_id(notification_id)},
             update
+        )
+
+    def find_by_resend_id(self, resend_id: str) -> Optional[Notification]:
+        """Find a notification by its Resend email ID (for webhook lookups)."""
+        doc = self._collection.find_one({"resend_id": resend_id})
+        return _from_document(doc, Notification) if doc else None
+
+    def update_delivery_status(self, resend_id: str, status: str, **fields) -> bool:
+        """
+        Update notification delivery status by Resend ID.
+
+        Args:
+            resend_id: The Resend email ID
+            status: New NotificationStatus value
+            **fields: Additional fields to update (e.g., delivered_at, bounce_type)
+
+        Returns:
+            True if a document was updated, False otherwise.
+        """
+        update = {"$set": {"status": status, **fields}}
+        result = self._collection.update_one(
+            {"resend_id": resend_id},
+            update
+        )
+        return result.modified_count > 0
+
+    def update_retry_count(self, notification_id: str, count: int) -> None:
+        """Update the retry count for a notification."""
+        self._collection.update_one(
+            {"_id": _to_object_id(notification_id)},
+            {"$set": {"retry_count": count}}
         )
 
 
@@ -363,4 +394,3 @@ class EventRepository:
                 doc["supporting_signals"] = [str(x) for x in doc.get("supporting_signals") or []]
             out.append(_from_document(doc, Event))
         return out
-

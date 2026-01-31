@@ -11,6 +11,10 @@ class NotificationStatus(str, Enum):
     PENDING = "pending"
     SENT = "sent"
     DELIVERED = "delivered"
+    OPENED = "opened"
+    CLICKED = "clicked"
+    BOUNCED = "bounced"
+    COMPLAINED = "complained"
     FAILED = "failed"
 
 
@@ -36,6 +40,15 @@ class Notification(BaseModel):
     # Timestamps
     created_at: datetime = Field(default_factory=datetime.utcnow)
     sent_at: Optional[datetime] = None
-    
+    delivered_at: Optional[datetime] = None
+    opened_at: Optional[datetime] = None
+    bounced_at: Optional[datetime] = None
+
+    # Bounce info
+    bounce_type: Optional[str] = None
+
+    # Retry tracking
+    retry_count: int = 0
+
     class Config:
         use_enum_values = True
