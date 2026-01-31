@@ -6,6 +6,7 @@ Run with: python main.py
 
 from src.pipeline import DisasterResponsePipeline
 from src.database import DisasterRepository, NGORepository
+from src.database.connection import close_connection
 from src.models import NGO, NGOCapability, DisasterType
 
 
@@ -80,7 +81,9 @@ def main():
 
 
 if __name__ == "__main__":
-    # Uncomment to seed sample NGOs:
-    # seed_sample_ngos()
-    
-    main()
+    try:
+        # Uncomment to seed sample NGOs:
+        # seed_sample_ngos()
+        main()
+    finally:
+        close_connection()
