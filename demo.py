@@ -30,6 +30,7 @@ class Disaster(BaseModel):
     name: str = Field(description="Name of the disaster")
     disaster_type: DisasterType = Field(description="Disaster Type")
     severity: DisasterSeverity = Field(description="Severity of the disaster")
+    occurred_at: str = Field(description="Date/time when the disaster occurred, ISO 8601 format")
     location: str = Field(description="Location of the disaster")
     country: str = Field(description="Country of the disaster")
     region: str = Field(description="Region of the disaster")
@@ -38,99 +39,52 @@ class Disaster(BaseModel):
     source_url: str = Field(description="Source URL of the disaster")
     source_name: str = Field(description="Source Name of the disaster")
 
-
-class ExtractedDisaster(BaseModel):
-    disasters: list[Disaster] = Field(description="List of disasters") # list of disasters extracted from the urls
-    urls: list[str] = Field(description="List of urls") # list of urls from which the disasters were extracted
-
-class NGOCapability(str, Enum):
-    """Capabilities/specializations of NGOs."""
-    SEARCH_AND_RESCUE = "search_and_rescue"
-    MEDICAL_AID = "medical_aid"
-    FOOD_AND_WATER = "food_and_water"
-    SHELTER = "shelter"
-    EVACUATION = "evacuation"
-    REBUILDING = "rebuilding"
-    PSYCHOLOGICAL_SUPPORT = "psychological_support"
-    LOGISTICS = "logistics"
-    COMMUNICATIONS = "communications"
-    GENERAL_RELIEF = "general_relief"
-
+class DisasterList(BaseModel):
+    disasters: List[Disaster] = Field(description="List of all disasters found")
 
 class NGOType(str, Enum):
-    """High-level NGO category (small fixed set, good for validation)."""
-
     LOCAL = "local"
-    NATIONAL = "national"
+    NATIONAL = "national"  
     INTERNATIONAL = "international"
-    GOVERNMENT_PARTNER = "government_partner"
-    OTHER = "other"
-
-
-class VerificationStatus(str, Enum):
-    """Verification state for credibility / filtering."""
-
-    UNVERIFIED = "unverified"
-    VERIFIED = "verified"
-    FLAGGED = "flagged"
 
 class NGO(BaseModel):
-    """An NGO that can respond to disasters."""
-    
-    id: Optional[str] = Field(default=None, description="MongoDB ObjectId as string")
-    
-    # Core info
-    name: str
-    description: Optional[str] = None
-    ngo_type: NGOType = NGOType.OTHER
-    verification_status: VerificationStatus = VerificationStatus.UNVERIFIED
-    
-    # Contact
-    email: str  # Primary contact email
-    contact_name: Optional[str] = None
-    phone: Optional[str] = None
-    website: Optional[str] = None
-    
-    # Capabilities and coverage
-    capabilities: list[NGOCapability] = Field(default_factory=list)
-    disaster_types: list[str] = Field(default_factory=list)  # DisasterType values they handle
-    
-    # Geographic coverage
-    countries: list[str] = Field(default_factory=list)  # Countries they operate in
-    regions: list[str] = Field(default_factory=list)  # Specific regions
-    is_global: bool = False  # Operates worldwide
-    
-    # Status
-    active: bool = True
-    
-    class Config:
-        use_enum_values = True
-
+    name: str = Field(description="Official name of the NGO")
+    contact_email: str = Field(description="Primary contact email address")
+    phone: str = Field(default="", description="Contact phone number if available")
+    website: str = Field(description="NGO website URL")
+    ngo_type: NGOType = Field(description="Whether NGO is local, national, or international")
+    aid_type: str = Field(description="Primary aid type: medical, food/water, shelter, search & rescue, or general relief")
 
 class NGOList(BaseModel):
     ngos: List[NGO] = Field(description="List of NGOs")
 
 # run a function which "takes in" a list of url news sources and returns a list of disasters
-def find_disasters():
-    result = app.agent(
+def find_disasters() -> DisasterList:
+    print("Finding disasters...")
+    return app.agent(
         prompt='''
-        Search the web for global disasters or serious incidents that NGOs could provide assistance to occuring within the last 24 hours. 
-        For each real world disaster, only return one list entry (NO DUPLICATES). 
-        Ensure it is within the last 24 hours and of a scale/in a location that NGOs could provide assistance to.
-        For example, a hurricane that occurred 2 days ago in the ocean is not a real world disaster.
+        Search news sources for the 5 most significant global disasters that occurred in the LAST 24 HOURS ONLY.
+        CRITICAL: Only include disasters that started or significantly escalated within the past 24 hours. 
+        Reject any disaster older than 24 hours, even if still ongoing.
+        Return exactly 5 disasters, prioritized by severity and humanitarian impact.
+        Include: earthquakes, floods, fires, storms, landslides, industrial accidents.
+        Only disasters where NGOs could provide aid (populated areas, significant casualties or displacement)
         ''',
-        schema=Disaster,
+        schema=DisasterList,
         model="spark-1-pro"
     )
 
 # for each disaster different function finds relevant NGOs
-def find_ngos(disaster: Disaster):
+def find_ngos(disaster: Disaster) -> NGOList:
     print(f"Finding NGOs for disaster: {disaster.title}")
-    result = app.agent(
+    return app.agent(
         prompt=f'''
-        Search the web for NGOs could provide assistance to the following disaster: {disaster.model_dump_json()}
-        For each NGO, only return one list entry (NO DUPLICATES). 
-        Return at least 5 distinct relevant NGOs if they exist.
+        Find 5-10 NGOs that could assist with this disaster: {disaster}
+
+        CRITICAL: You MUST find a real contact email for each NGO. Visit their website's contact page to find it.
+        - Only include NGOs where you can find an actual contact email address
+        - Skip any NGO if you cannot locate their email
+        - NO DUPLICATES
         ''',
         schema=NGOList,
         model="spark-1-pro"
