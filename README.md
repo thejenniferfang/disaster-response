@@ -10,7 +10,7 @@ Firecrawl (monitor) → NGO Matcher (find) → Resend (notify)
                        MongoDB (storage)
 ```
 
-## MongoDB mental model (judge-friendly)
+## MongoDB mental model 
 
 We store data in layers to preserve provenance and enable time-window detection:
 
@@ -107,8 +107,6 @@ Defaults in the detector:
 
 - `window_minutes=30`: only consider recent signals
 - `min_count=3`: require 3+ similar signals in same region/type to form an event candidate
-
-These are intentionally easy to justify to judges and easy to tune.
 
 ## Usage Example
 
