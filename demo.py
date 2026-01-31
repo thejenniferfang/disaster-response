@@ -107,9 +107,17 @@ class NGO(BaseModel):
 
 
 # run a function which "takes in" a list of url news sources and returns a list of disasters
-def find_disasters(urls: list[str]):
-    for url in urls:
-        pass
+def find_disasters():
+    result = app.agent(
+        prompt='''
+        Search the web for global disasters or serious incidents that NGOs could provide assistance to occuring within the last 24 hours. 
+        For each real world disaster, only return one list entry (NO DUPLICATES). 
+        Ensure it is within the last 24 hours and of a scale/in a location that NGOs could provide assistance to.
+        For example, a hurricane that occurred 2 days ago in the ocean is not a real world disaster.
+        ''',
+        schema=Disaster,
+        model="spark-1-pro"
+    )
 
 # for each disaster different function finds relevant NGOs
 def find_ngos(disaster: Disaster):
