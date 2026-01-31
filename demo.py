@@ -79,7 +79,7 @@ def find_ngos(disaster: Disaster) -> NGOList:
     print(f"Finding NGOs for disaster: {disaster.title}")
     return app.agent(
         prompt=f'''
-        Find 5-10 NGOs that could assist with this disaster: {disaster}
+        Find 5 MAXIMUM distinct NGOs that could assist with this disaster: {disaster}
 
         CRITICAL: You MUST find a real contact email for each NGO. Visit their website's contact page to find it.
         - Only include NGOs where you can find an actual contact email address
