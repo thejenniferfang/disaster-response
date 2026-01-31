@@ -1,8 +1,11 @@
 from firecrawl import FirecrawlApp
 from pydantic import BaseModel, Field
 from typing import List, Optional, Enum
+from src.config import config
+import resend
 
 app = FirecrawlApp(api_key="fc-29a5fd3db63d4b1fb909b232de75a074")
+app_resend = resend(api_key="re_MPbsi958_26tHbygWsVLXT6W9rMmdDqkD")
 
 class DisasterType(str, Enum):
     """Types of disasters the system can detect."""
@@ -139,5 +142,24 @@ def find_ngos(disaster: Disaster):
 # for each NGO, email is sent with disaster information
 def send_email(ngo: NGO, disaster: Disaster):
     print(f"Sending email to {ngo.name} for disaster: {disaster.title}")
+    def send_email(to_email: str, subject: str, html: str, reply_to: str | None = None):
+        params = {
+            "from": config.from_email,      # e.g. "Acme <onboarding@resend.dev>"
+            "to": [to_email],              # must be a list
+            "subject": subject,
+            "html": html,
+        }
+        if reply_to:
+            params["reply_to"] = reply_to
 
+        return resend.Emails.send(params)
 
+# 1) extract disasters
+disasters = find_disasters()
+if not disasters:
+    print("No disasters found")
+    exit()
+
+for disaster in disasters:
+    ngos = find_ngos(disaster)
+    send_email(ngos, disaster)

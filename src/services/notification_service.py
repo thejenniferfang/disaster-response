@@ -19,6 +19,7 @@ from src.services.template_service import TemplateService
 
 logger = logging.getLogger(__name__)
 
+app_resend = resend(api_key="re_MPbsi958_26tHbygWsVLXT6W9rMmdDqkD")
 
 class NotificationService:
     """Service for sending notifications to NGOs via Resend."""
