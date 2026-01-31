@@ -33,7 +33,8 @@ class Disaster(BaseModel):
     location: str = Field(description="Location of the disaster")
     country: str = Field(description="Country of the disaster")
     region: str = Field(description="Region of the disaster")
-    coordinates: tuple[float, float] = Field(description="Coordinates of the disaster")
+    latitude: float = Field(description="Latitude coordinate")
+    longitude: float = Field(description="Longitude coordinate")
     source_url: str = Field(description="Source URL of the disaster")
     source_name: str = Field(description="Source Name of the disaster")
 
@@ -106,6 +107,9 @@ class NGO(BaseModel):
         use_enum_values = True
 
 
+class NGOList(BaseModel):
+    ngos: List[NGO] = Field(description="List of NGOs")
+
 # run a function which "takes in" a list of url news sources and returns a list of disasters
 def find_disasters():
     result = app.agent(
@@ -122,13 +126,18 @@ def find_disasters():
 # for each disaster different function finds relevant NGOs
 def find_ngos(disaster: Disaster):
     print(f"Finding NGOs for disaster: {disaster.title}")
+    result = app.agent(
+        prompt=f'''
+        Search the web for NGOs could provide assistance to the following disaster: {disaster.model_dump_json()}
+        For each NGO, only return one list entry (NO DUPLICATES). 
+        Return at least 5 distinct relevant NGOs if they exist.
+        ''',
+        schema=NGOList,
+        model="spark-1-pro"
+    )
 
 # for each NGO, email is sent with disaster information
 def send_email(ngo: NGO, disaster: Disaster):
     print(f"Sending email to {ngo.name} for disaster: {disaster.title}")
 
-disasters_result = app.agent(
-    prompt="Extract the disasters from the following urls: {urls}",
-    schema=ExtractedDisaster,
-    urls=["https://www.google.com", "https://www.yahoo.com", "https://www.bing.com", "newyorktimes.com", "sfchronicle.com"]
-)
+
