@@ -3,8 +3,11 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from enum import Enum
 from src.config import config
+from functools import lru_cache
 import resend
 from typing import Tuple
+import hashlib
+import time
 
 app = FirecrawlApp(api_key="fc-29a5fd3db63d4b1fb909b232de75a074")
 resend.api_key = "re_MPbsi958_26tHbygWsVLXT6W9rMmdDqkD"
@@ -13,6 +16,9 @@ SEND_TO_DEMO_EMAIL = True
 DEMO_EMAIL = "emergencydisasterdemo@gmail.com"
 NUM_DISASTERS = 2
 NUM_NGOS = 2
+
+CACHE_FIRECRAWL = True
+
 class DisasterType(str, Enum):
     """Types of disasters the system can detect."""
     EARTHQUAKE = "earthquake"
@@ -70,34 +76,42 @@ class NGOList(BaseModel):
 # run a function which "takes in" a list of url news sources and returns a list of disasters
 def find_disasters() -> DisasterList:
     print("Finding disasters...")
-    return app.agent(
-        prompt=f'''
-        Search news sources for the {NUM_DISASTERS} most significant global disasters that occurred in the LAST 24 HOURS ONLY.
-        CRITICAL: Only include disasters that started or significantly escalated within the past 24 hours. 
-        Reject any disaster older than 24 hours, even if still ongoing.
-        Return exactly {NUM_DISASTERS} disasters, prioritized by severity and humanitarian impact.
-        Include: earthquakes, floods, fires, storms, landslides, industrial accidents.
-        Only disasters where NGOs could provide aid (populated areas, significant casualties or displacement)
-        ''',
-        schema=DisasterList,
-        model="spark-1-pro"
-    )
+    if CACHE_FIRECRAWL:
+        time.sleep(5)
+        return DisasterList(disasters=[])
+    else:
+        return app.agent(
+            prompt=f'''
+            Search news sources for the {NUM_DISASTERS} most significant global disasters that occurred in the LAST 24 HOURS ONLY.
+            CRITICAL: Only include disasters that started or significantly escalated within the past 24 hours. 
+            Reject any disaster older than 24 hours, even if still ongoing.
+            Return exactly {NUM_DISASTERS} disasters, prioritized by severity and humanitarian impact.
+            Include: earthquakes, floods, fires, storms, landslides, industrial accidents.
+            Only disasters where NGOs could provide aid (populated areas, significant casualties or displacement)
+            ''',
+            schema=DisasterList,
+            model="spark-1-pro"
+        )
 
 # for each disaster different function finds relevant NGOs
 def find_ngos(disaster: Disaster) -> NGOList:
     print(f"Finding NGOs for disaster: {disaster.name}")
-    return app.agent(
-        prompt=f'''
-        Find {NUM_NGOS} MAXIMUM distinct NGOs that could assist with this disaster: {disaster}
+    if CACHE_FIRECRAWL:
+        time.sleep(5)
+        return NGOList(ngos=[])
+    else:
+        return app.agent(
+            prompt=f'''
+            Find {NUM_NGOS} MAXIMUM distinct NGOs that could assist with this disaster: {disaster}
 
-        CRITICAL: You MUST find a real contact email for each NGO. Visit their website's contact page to find it.
-        - Only include NGOs where you can find an actual contact email address
-        - Skip any NGO if you cannot locate their email
-        - NO DUPLICATES
-        ''',
-        schema=NGOList,
-        model="spark-1-pro"
-    )
+            CRITICAL: You MUST find a real contact email for each NGO. Visit their website's contact page to find it.
+            - Only include NGOs where you can find an actual contact email address
+            - Skip any NGO if you cannot locate their email
+            - NO DUPLICATES
+            ''',
+            schema=NGOList,
+            model="spark-1-pro"
+        )
 
 # for each NGO, email is sent with disaster information
 def send_emails(ngoDisasterList: List[Tuple[NGO, Disaster]]):
