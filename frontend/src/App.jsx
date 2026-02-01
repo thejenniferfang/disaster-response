@@ -159,6 +159,12 @@ export default function App() {
           <div className="loading-bar">
             <div className={`loading-bar-fill ${getLoadingClass('disasters')}`} />
           </div>
+          {stepStatus.disasters === 'loading' && disasters.length === 0 && (
+            <div className="loading-spinner-container">
+              <div className="spinner" />
+              <span>Scanning global news sources...</span>
+            </div>
+          )}
           {disasters.length > 0 && (
             <div className="table-container">
               <table>
@@ -174,7 +180,11 @@ export default function App() {
                 <tbody>
                   {disasters.map((d, i) => (
                     <tr key={i} className="animate-row">
-                      <td>{d.name}</td>
+                      <td>
+                        <a href={d.source_url} target="_blank" rel="noopener noreferrer" className="disaster-link">
+                          {d.name}
+                        </a>
+                      </td>
                       <td>{d.disaster_type}</td>
                       <td>{d.location}, {d.country}</td>
                       <td><span className={`severity ${d.severity}`}>{d.severity}</span></td>

@@ -82,9 +82,9 @@ Disaster Response Notification System</p>
 async def run_pipeline_stream():
     """Generator that yields pipeline events as SSE."""
     
-    # Step 1: Finding disasters
+    # Step 1: Finding disasters (~15s total)
     yield f"data: {json.dumps({'type': 'status', 'step': 'disasters', 'status': 'loading'})}\n\n"
-    await asyncio.sleep(0.3)
+    await asyncio.sleep(10)  # 10 second initial delay
     
     disaster_list = await asyncio.to_thread(find_disasters)
     
@@ -92,11 +92,11 @@ async def run_pipeline_stream():
     total_disasters = len(disaster_list.disasters)
     for idx, disaster in enumerate(disaster_list.disasters):
         yield f"data: {json.dumps({'type': 'disaster_found', 'index': idx, 'total': total_disasters, 'disaster': disaster_to_dict(disaster)})}\n\n"
-        await asyncio.sleep(0.35)
+        await asyncio.sleep(0.8)  # 0.8s per disaster
     
     yield f"data: {json.dumps({'type': 'status', 'step': 'disasters', 'status': 'complete'})}\n\n"
     
-    # Step 2: Finding NGOs for each disaster
+    # Step 2: Finding NGOs for each disaster (~18s total with cache delays)
     yield f"data: {json.dumps({'type': 'status', 'step': 'ngos', 'status': 'loading'})}\n\n"
     
     ngo_disaster_list: List[Tuple[NGO, Disaster]] = []
@@ -104,7 +104,7 @@ async def run_pipeline_stream():
     
     for i, disaster in enumerate(disaster_list.disasters):
         yield f"data: {json.dumps({'type': 'ngo_progress', 'disaster_index': i, 'disaster_name': disaster.name})}\n\n"
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.5)
         
         ngos = await asyncio.to_thread(find_ngos, disaster)
         ngo_disaster_list.extend([(ngo, disaster) for ngo in ngos.ngos])
@@ -117,20 +117,21 @@ async def run_pipeline_stream():
             })
         
         yield f"data: {json.dumps({'type': 'ngos_found', 'disaster_index': i, 'ngos': [ngo_to_dict(n) for n in ngos.ngos]})}\n\n"
+        await asyncio.sleep(0.3)
     
     yield f"data: {json.dumps({'type': 'status', 'step': 'ngos', 'status': 'complete'})}\n\n"
     yield f"data: {json.dumps({'type': 'all_ngo_links', 'data': all_ngo_links})}\n\n"
     
-    # Step 3: Generate email previews (spoofed - no actual sending)
+    # Step 3: Generate email previews (~17s for 25 emails)
     yield f"data: {json.dumps({'type': 'status', 'step': 'emails', 'status': 'loading'})}\n\n"
-    await asyncio.sleep(0.3)
+    await asyncio.sleep(0.5)
     
     # Send emails one by one with delay
     total_emails = len(ngo_disaster_list)
     for idx, (ngo, disaster) in enumerate(ngo_disaster_list):
         preview = generate_email_preview(ngo, disaster)
         yield f"data: {json.dumps({'type': 'email_sent', 'index': idx, 'total': total_emails, 'preview': preview})}\n\n"
-        await asyncio.sleep(0.4)  # Delay between each email
+        await asyncio.sleep(0.65)  # ~0.65s per email
     
     yield f"data: {json.dumps({'type': 'emails_complete', 'count': total_emails})}\n\n"
     yield f"data: {json.dumps({'type': 'status', 'step': 'emails', 'status': 'complete'})}\n\n"
