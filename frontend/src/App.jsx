@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 function timeAgo(dateString) {
   const date = new Date(dateString)
@@ -8,27 +8,40 @@ function timeAgo(dateString) {
   if (seconds < 60) return 'just now'
 
   const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
+  if (minutes === 1) return '1 min ago'
+  if (minutes < 60) return `${minutes} min ago`
 
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
+  if (hours === 1) return '1 hour ago'
+  if (hours < 24) return `${hours} hours ago`
 
   const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
+  if (days === 1) return '1 day ago'
+  if (days < 7) return `${days} days ago`
 
   return date.toLocaleDateString()
 }
 
 export default function App() {
   const [running, setRunning] = useState(false)
-  const [step, setStep] = useState(null) // 'disasters' | 'ngos' | 'emails'
+  const [step, setStep] = useState(null)
   const [stepStatus, setStepStatus] = useState({})
   const [disasters, setDisasters] = useState([])
   const [ngoLinks, setNgoLinks] = useState([])
   const [emailCount, setEmailCount] = useState(0)
-  const [emailError, setEmailError] = useState(null)
+  const [emailPreviews, setEmailPreviews] = useState([])
+  const [selectedEmail, setSelectedEmail] = useState(null)
   const [progressText, setProgressText] = useState('')
   const [complete, setComplete] = useState(false)
+
+  const endRef = useRef(null)
+
+  // Auto-scroll when new content appears
+  useEffect(() => {
+    if (running && endRef.current) {
+      endRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    }
+  }, [running, stepStatus, disasters, ngoLinks, emailPreviews, complete])
 
   const runPipeline = async () => {
     setRunning(true)
@@ -37,7 +50,8 @@ export default function App() {
     setDisasters([])
     setNgoLinks([])
     setEmailCount(0)
-    setEmailError(null)
+    setEmailPreviews([])
+    setSelectedEmail(null)
     setProgressText('')
     setComplete(false)
 
@@ -67,11 +81,14 @@ export default function App() {
           ])
           break
         case 'all_ngo_links':
-          // Already handled incrementally
           break
-        case 'emails_sent':
+        case 'email_sent':
+          setEmailCount(data.total)
+          setEmailPreviews(prev => [...prev, data.preview])
+          setProgressText(`Sending email ${data.index + 1} of ${data.total}...`)
+          break
+        case 'emails_complete':
           setEmailCount(data.count)
-          setEmailError(data.error || null)
           setProgressText('')
           break
         case 'pipeline_complete':
@@ -105,17 +122,24 @@ export default function App() {
   return (
     <div className="container">
       <div className="header">
-        <h1>Disaster Response Pipeline</h1>
-        <p>Real-time disaster detection, NGO matching, and notification system</p>
+        <img src="/logo.png" alt="Poseidon" className="logo" />
+        <div className="header-actions">
+          <span className="auto-run-note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 6v6l4 2" />
+            </svg>
+            Runs every 30 min
+          </span>
+          <button
+            className="start-btn"
+            onClick={runPipeline}
+            disabled={running}
+          >
+            {running ? 'Running...' : 'Run Pipeline'}
+          </button>
+        </div>
       </div>
-
-      <button
-        className="start-btn"
-        onClick={runPipeline}
-        disabled={running}
-      >
-        {running ? 'Running...' : 'Run Pipeline'}
-      </button>
 
       <div className="pipeline">
         {/* Step 1: Disasters */}
@@ -227,30 +251,44 @@ export default function App() {
               <span className="step-title">Send Alert Emails</span>
               {stepStatus.emails && (
                 <span className="step-status">
-                  {stepStatus.emails === 'loading' ? 'Sending...' : `${emailCount} sent`}
+                  {stepStatus.emails === 'loading'
+                    ? `${emailPreviews.length}/${emailCount || '?'} sent`
+                    : `${emailCount} sent`}
                 </span>
               )}
             </div>
             <div className="loading-bar">
               <div className={`loading-bar-fill ${getLoadingClass('emails')}`} />
             </div>
-            {stepStatus.emails === 'complete' && !emailError && (
-              <div className="email-success">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" fill="currentColor" />
-                </svg>
-                {emailCount} alert emails sent successfully
-              </div>
+            {stepStatus.emails === 'loading' && progressText && (
+              <div className="progress-text">{progressText}</div>
             )}
-            {stepStatus.emails === 'complete' && emailError && (
-              <div className="email-error">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-5a1 1 0 112 0 1 1 0 01-2 0zm1-8a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fill="currentColor" />
-                </svg>
-                <div>
-                  <div>{emailCount} emails prepared (sending failed)</div>
-                  <div className="error-detail">Resend API: Use delivered@resend.dev for testing</div>
-                </div>
+            {emailPreviews.length > 0 && (
+              <div className="email-list">
+                {emailPreviews.map((email, idx) => (
+                  <div
+                    key={idx}
+                    className="email-card animate-in"
+                    style={{ animationDelay: `${idx * 0.05}s` }}
+                    onClick={() => setSelectedEmail(email)}
+                  >
+                    <div className="email-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="2" y="4" width="20" height="16" rx="2" />
+                        <path d="M22 6l-10 7L2 6" />
+                      </svg>
+                    </div>
+                    <div className="email-info">
+                      <div className="email-to">{email.ngo_name}</div>
+                      <div className="email-subject">{email.subject}</div>
+                    </div>
+                    <div className="email-status">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -268,7 +306,29 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* Scroll anchor */}
+        <div ref={endRef} />
       </div>
+
+      {/* Email Preview Modal */}
+      {selectedEmail && (
+        <div className="modal-overlay" onClick={() => setSelectedEmail(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">Email Preview</div>
+              <button className="modal-close" onClick={() => setSelectedEmail(null)}>×</button>
+            </div>
+            <div className="modal-meta">
+              <div><strong>To:</strong> {selectedEmail.to}</div>
+              <div><strong>Subject:</strong> {selectedEmail.subject}</div>
+            </div>
+            <div className="modal-body">
+              <div dangerouslySetInnerHTML={{ __html: selectedEmail.html }} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
