@@ -1,0 +1,44 @@
+{
+  "ngos": [
+    {
+      "name": "Mozambique Red Cross Society",
+      "contact_email": "cvm@redcross.org.mz",
+      "phone": "+258 1 49 77 21",
+      "website": "https://www.ifrc.org/emergency/mozambique-floods-2026",
+      "ngo_type": "national",
+      "aid_type": "general relief"
+    },
+    {
+      "name": "World Food Programme (WFP) Mozambique",
+      "contact_email": "mozambique.reception@wfp.org",
+      "phone": "+258 84 736 4463",
+      "website": "https://www.wfp.org/countries/mozambique",
+      "ngo_type": "international",
+      "aid_type": "food/water"
+    },
+    {
+      "name": "Save the Children Mozambique",
+      "contact_email": "scimoz@savethechildren.org",
+      "phone": "+258 21 493 140",
+      "website": "https://www.savethechildren.net/mozambique",
+      "ngo_type": "international",
+      "aid_type": "general relief"
+    },
+    {
+      "name": "International Organization for Migration (IOM) Mozambique",
+      "contact_email": "iommozambique@iom.int",
+      "phone": "",
+      "website": "https://mozambique.iom.int",
+      "ngo_type": "international",
+      "aid_type": "shelter"
+    },
+    {
+      "name": "ActionAid Mozambique",
+      "contact_email": "heleno.bombe@actionaid.org",
+      "phone": "",
+      "website": "https://www.actionaidusa.org",
+      "ngo_type": "international",
+      "aid_type": "food/water"
+    }
+  ]
+}

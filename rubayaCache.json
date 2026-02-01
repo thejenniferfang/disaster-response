@@ -1,0 +1,44 @@
+{
+  "ngos": [
+    {
+      "name": "Cordaid",
+      "contact_email": "cordaid.rdc@cordaid.org",
+      "phone": "",
+      "website": "https://www.cordaid.org/en/countries/democratic-republic-of-congo/",
+      "ngo_type": "international",
+      "aid_type": "general relief"
+    },
+    {
+      "name": "Red Cross of the Democratic Republic of Congo",
+      "contact_email": "sgcrrdc@croixrouge-rdc.org",
+      "phone": "",
+      "website": "https://www.ifrc.org/national-societies-directory/red-cross-democratic-republic-congo",
+      "ngo_type": "national",
+      "aid_type": "medical"
+    },
+    {
+      "name": "CARE International",
+      "contact_email": "cisecretariat@careinternational.org",
+      "phone": "",
+      "website": "https://www.care-international.org",
+      "ngo_type": "international",
+      "aid_type": "general relief"
+    },
+    {
+      "name": "Mercy Corps",
+      "contact_email": "drc-questions@mercycorps.org",
+      "phone": "",
+      "website": "https://www.mercycorps.org/where-we-work/democratic-republic-congo",
+      "ngo_type": "international",
+      "aid_type": "general relief"
+    },
+    {
+      "name": "Action Against Hunger",
+      "contact_email": "info@actionagainsthunger.org",
+      "phone": "",
+      "website": "https://www.actionagainsthunger.org/location/africa/democratic-republic-congo/",
+      "ngo_type": "international",
+      "aid_type": "food/water"
+    }
+  ]
+}

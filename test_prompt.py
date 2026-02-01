@@ -28,6 +28,7 @@ class Disaster(BaseModel):
     name: str = Field(description="Name of the disaster")
     disaster_type: DisasterType = Field(description="Disaster Type")
     severity: DisasterSeverity = Field(description="Severity of the disaster")
+    occurred_at: str = Field(description="Date/time when the disaster occurred, ISO 8601 format")
     location: str = Field(description="Location of the disaster")
     country: str = Field(description="Country of the disaster")
     region: str = Field(description="Region of the disaster")
@@ -36,17 +37,28 @@ class Disaster(BaseModel):
     source_url: str = Field(description="Source URL of the disaster")
     source_name: str = Field(description="Source Name of the disaster")
 
+class DisasterList(BaseModel):
+    disasters: List[Disaster] = Field(description="List of all disasters found")
+
 # === PROMPT TO ITERATE ON ===
 PROMPT = '''
-Search multiple news sources (Reuters, BBC, Al Jazeera, AP News, local news) to find ALL global disasters from the last 24 hours.
+Search news sources for the 5 most significant global disasters that occurred in the LAST 24 HOURS ONLY.
 
-Return EACH disaster separately. Find at least 5 distinct disasters if they exist.
+CRITICAL: Only include disasters that started or significantly escalated within the past 24 hours. 
+Reject any disaster older than 24 hours, even if still ongoing.
 
-Include: earthquakes, floods, fires, storms, industrial accidents, etc.
-Only include disasters where NGOs could realistically provide aid (populated areas, significant impact).
+Return exactly 5 disasters, prioritized by severity and humanitarian impact.
+
+Include: earthquakes, floods, fires, storms, landslides, industrial accidents.
+Only disasters where NGOs could provide aid (populated areas, significant casualties or displacement).
 '''
 
 if __name__ == "__main__":
-    result = app.agent(prompt=PROMPT, schema=Disaster, model="spark-1-pro")
+    result = app.agent(prompt=PROMPT, schema=DisasterList, model="spark-1-pro")
     print("\n=== RESULT ===")
-    print(result)
+    if result.success and result.data:
+        for d in result.data.get("disasters", []):
+            print(f"\n- {d['name']} ({d['disaster_type']})")
+            print(f"  {d['location']}, {d['country']} | {d.get('occurred_at', 'N/A')}")
+    else:
+        print(result)

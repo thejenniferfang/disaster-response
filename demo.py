@@ -2,7 +2,6 @@ from firecrawl import FirecrawlApp
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from enum import Enum
-from src.config import config
 from functools import lru_cache
 import resend
 from typing import Tuple
@@ -13,12 +12,12 @@ app = FirecrawlApp(api_key="fc-29a5fd3db63d4b1fb909b232de75a074")
 resend.api_key = "re_MPbsi958_26tHbygWsVLXT6W9rMmdDqkD"
 
 SEND_TO_DEMO_EMAIL = True
-DEMO_EMAIL = "pls.leave.me.alone123@gmail.com"
-NUM_DISASTERS = 2
-NUM_NGOS = 2
+DEMO_EMAIL = "sgolden26@berkeley.edu"
+NUM_DISASTERS = 5
+NUM_NGOS = 5
 
-CACHE_FIRECRAWL = True
-
+CACHE_FIRECRAWL_DISASTERS = True
+CACHE_FIRECRAWL_NGOS = True
 class DisasterType(str, Enum):
     """Types of disasters the system can detect."""
     EARTHQUAKE = "earthquake"
@@ -76,9 +75,13 @@ class NGOList(BaseModel):
 # run a function which "takes in" a list of url news sources and returns a list of disasters
 def find_disasters() -> DisasterList:
     print("Finding disasters...")
-    if CACHE_FIRECRAWL:
-        time.sleep(5)
-        return DisasterList(disasters=[])
+    if CACHE_FIRECRAWL_DISASTERS:
+        import json
+        with open('disasterResponseCache.json', 'r') as f:
+            cache_data = json.load(f)
+        disasters = [Disaster(**disaster_dict) for disaster_dict in cache_data['disasters']]
+        time.sleep(3)
+        return DisasterList(disasters=disasters)
     else:
         response = app.agent(
             prompt=f'''
@@ -94,12 +97,38 @@ def find_disasters() -> DisasterList:
         )
         return DisasterList(**response.data)
 
+# Mapping of disaster name keywords to NGO cache files
+NGO_CACHE_MAP = {
+    "rubaya": "rubayaCache.json",
+    "mozambique": "mozambiqueCache.json",
+    "philippines": "philipinesCache.json",
+    "tropical": "tropicalCache.json",
+    "storm": "stormCache.json",
+}
+
 # for each disaster different function finds relevant NGOs
 def find_ngos(disaster: Disaster) -> NGOList:
     print(f"Finding NGOs for disaster: {disaster.name}")
-    if CACHE_FIRECRAWL:
-        time.sleep(5)
-        return NGOList(ngos=[])
+    if CACHE_FIRECRAWL_NGOS:
+        import json
+        # Find matching cache file based on disaster name
+        cache_file = None
+        disaster_name_lower = disaster.name.lower()
+        for keyword, filename in NGO_CACHE_MAP.items():
+            if keyword in disaster_name_lower:
+                cache_file = filename
+                break
+        
+        if cache_file:
+            with open(cache_file, 'r') as f:
+                cache_data = json.load(f)
+            ngos = [NGO(**ngo_dict) for ngo_dict in cache_data['ngos']]
+            time.sleep(2)
+            return NGOList(ngos=ngos)
+        else:
+            print(f"No cache found for disaster: {disaster.name}")
+            time.sleep(2)
+            return NGOList(ngos=[])
     else:
         response = app.agent(
             prompt=f'''
@@ -120,7 +149,7 @@ def send_emails(ngoDisasterList: List[Tuple[NGO, Disaster]]):
     params: List[resend.Emails.SendParams] = [
         {
             "from": "onboarding@resend.dev",
-            "to": [DEMO_EMAIL if SEND_TO_DEMO_EMAIL else ngo.contact_email],
+            "to": DEMO_EMAIL if SEND_TO_DEMO_EMAIL else ngo.contact_email,
             "subject": f"{"[to " + ngo.contact_email + "] " if SEND_TO_DEMO_EMAIL else ""}Disaster Alert: {disaster.name}",
             "html": f"""
             <html>
@@ -161,16 +190,55 @@ def send_emails(ngoDisasterList: List[Tuple[NGO, Disaster]]):
             """,
         } for ngo, disaster in ngoDisasterList
     ]
+    print(params)
+    return resend.Batch.send(params)
 
-    return resend.Emails.send(params)
+def run_pipeline():
+    """Run the full disaster response pipeline."""
+    # 1) extract disasters
+    disasterlist: DisasterList = find_disasters()
+    ngoDisasterList: List[Tuple[NGO, Disaster]] = []
+    for disaster in disasterlist.disasters:
+        ngos = find_ngos(disaster)
+        ngoDisasterList.extend([(ngo, disaster) for ngo in ngos.ngos])
+    print(f"Sending emails")
+    print(ngoDisasterList)
+    print(send_emails(ngoDisasterList))
+    return disasterlist, ngoDisasterList
 
-# 1) extract disasters
+if __name__ == "__main__":
+    run_pipeline()
+    # params = {
+    #         "from": "onboarding@resend.dev",
+    #         "to": DEMO_EMAIL,
+    #         "subject": f"{"[to " + "] " if SEND_TO_DEMO_EMAIL else ""}Disaster Alert: ",
+    #         "html": f"""
+    #         <html>
+    #         <body>
+    #             <h2>Urgent Disaster Response Alert</h2>
+                
+    #             <p>Dear  Team,</p>
+                
+    #             <p>We are reaching out to you because your organization has been identified as a potential responder for a recent disaster that requires immediate humanitarian assistance.</p>
+                
+    #             <h3>Disaster Information:</h3>
+    #             <ul>
+    #               ng relief to those affected by this disas
+                
+    #             <p>If your organization is able to respond or coordinate relief efforts, please consider taking action as soon as possible. Time is critical in disaster response situations.</p>
+                
+    #             <p>For more information about this disaster, please visit the source link above or contact local emergency management authorities.</p>
+                
+    #             <p>Thank you for your continued commitment to humanitarian aid and disaster relief.</p>
+                
+    #             <p>Best regards,<br>
+    #             Disaster Response Notification System</p>
+                
+    #             <hr>
+    #             <p><small>This is an automated alert system designed to connect NGOs with disaster response opportunities. If you believe you received this message in error, please contact us.</small></p>
+    #         </body>
+    #         </html>
+    #         """,
+    #     }
 
-disasterlist: DisasterList = find_disasters()
-ngoDisasterList: List[Tuple[NGO, Disaster]] = []
-for disaster in disasterlist.disasters:
-    ngos = find_ngos(disaster)
-    ngoDisasterList.extend([(ngo, disaster) for ngo in ngos.ngos])
-print(f"Sending emails")
-print(ngoDisasterList)
-print(send_emails(ngoDisasterList))
+    # resend.Emails.send(params)

@@ -1,0 +1,44 @@
+{
+  "ngos": [
+    {
+      "name": "Malagasy Red Cross Society",
+      "contact_email": "contact@crmada.org",
+      "phone": "(261) 32 03 221 11",
+      "website": "https://www.croixrougemalagasy.mg/",
+      "ngo_type": "national",
+      "aid_type": "general relief"
+    },
+    {
+      "name": "World Food Programme (WFP) Madagascar",
+      "contact_email": "WFP.Antananarivo@wfp.org",
+      "phone": "+261 032 07 137 01",
+      "website": "https://www.wfp.org/countries/madagascar",
+      "ngo_type": "international",
+      "aid_type": "food/water"
+    },
+    {
+      "name": "International Organization for Migration (IOM) Madagascar",
+      "contact_email": "iommadagascar@iom.int",
+      "phone": "+261 20 23 308 09",
+      "website": "https://www.iom.int/countries/madagascar",
+      "ngo_type": "international",
+      "aid_type": "shelter"
+    },
+    {
+      "name": "UNICEF Madagascar",
+      "contact_email": "antananarivo@unicef.org",
+      "phone": "+261 20 23 300 92",
+      "website": "https://www.unicef.org/madagascar/en",
+      "ngo_type": "international",
+      "aid_type": "general relief"
+    },
+    {
+      "name": "Catholic Relief Services (CRS) Madagascar",
+      "contact_email": "madagascarsocialmedia@crs.org",
+      "phone": "+261 20 22 265 34",
+      "website": "https://www.crs.org/where-we-work/africa/madagascar",
+      "ngo_type": "international",
+      "aid_type": "general relief"
+    }
+  ]
+}

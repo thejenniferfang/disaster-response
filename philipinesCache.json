@@ -1,0 +1,44 @@
+{
+  "ngos": [
+    {
+      "name": "Americares",
+      "contact_email": "info@americares.org",
+      "phone": "+1-203-658-9500",
+      "website": "https://www.americares.org",
+      "ngo_type": "international",
+      "aid_type": "medical"
+    },
+    {
+      "name": "CARE Philippines",
+      "contact_email": "carephl.info@care.org",
+      "phone": "+63 2 8351 6458",
+      "website": "https://care-philippines.org",
+      "ngo_type": "international",
+      "aid_type": "general relief"
+    },
+    {
+      "name": "Philippine Red Cross",
+      "contact_email": "dms1@redcross.org.ph",
+      "phone": "+63 2 8790 2300",
+      "website": "https://redcross.org.ph",
+      "ngo_type": "national",
+      "aid_type": "general relief"
+    },
+    {
+      "name": "World Central Kitchen",
+      "contact_email": "hello@wck.org",
+      "phone": "+1 (202) 844-6330",
+      "website": "https://wck.org",
+      "ngo_type": "international",
+      "aid_type": "food/water"
+    },
+    {
+      "name": "Operation Blessing Foundation Philippines",
+      "contact_email": "info@operationblessing.ph",
+      "phone": "+63 2 8663 4701",
+      "website": "https://operationblessing.ph",
+      "ngo_type": "local",
+      "aid_type": "general relief"
+    }
+  ]
+}

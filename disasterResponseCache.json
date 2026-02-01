@@ -1,0 +1,69 @@
+{
+  "disasters": [
+    {
+      "name": "Rubaya Mine Collapse Landslide",
+      "disaster_type": "landslide",
+      "severity": "critical",
+      "occurred_at": "2026-01-28T15:00:00Z",
+      "location": "Rubaya, North-Kivu Province",
+      "country": "Democratic Republic of the Congo",
+      "region": "Central Africa",
+      "latitude": -0.459,
+      "longitude": 30.67,
+      "source_url": "https://watchers.news/2026/01/31/landslide-triggered-mine-collapse-kills-more-than-200-at-rubaya-coltan-site-in-north-kivu-dr-congo/",
+      "source_name": "The Watchers"
+    },
+    {
+      "name": "Mozambique Floods",
+      "disaster_type": "flood",
+      "severity": "critical",
+      "occurred_at": "2026-01-15T00:00:00Z",
+      "location": "Gaza, Maputo, Inhambane, Manica, Sofala, Zambezia provinces",
+      "country": "Mozambique",
+      "region": "Southern Africa",
+      "latitude": -23.02,
+      "longitude": 32.72,
+      "source_url": "https://reliefweb.int/report/mozambique/mozambique-food-security-cluster-situation-report-flooding-january-2026",
+      "source_name": "ReliefWeb"
+    },
+    {
+      "name": "Philippines Cebu Earthquake",
+      "disaster_type": "earthquake",
+      "severity": "critical",
+      "occurred_at": "2026-01-28T13:59:00Z",
+      "location": "Bogo, Cebu Province",
+      "country": "Philippines",
+      "region": "Southeast Asia",
+      "latitude": 11.05,
+      "longitude": 124,
+      "source_url": "https://www.dw.com/en/philippines-hit-by-69-magnitude-earthquake-dozens-dead/a-74193950",
+      "source_name": "Deutsche Welle"
+    },
+    {
+      "name": "Tropical Cyclone Fytia",
+      "disaster_type": "hurricane",
+      "severity": "high",
+      "occurred_at": "2026-01-31T00:00:00Z",
+      "location": "Central and Western Madagascar",
+      "country": "Madagascar",
+      "region": "East Africa",
+      "latitude": -18.77,
+      "longitude": 46.87,
+      "source_url": "https://www.gdacs.org/Cyclones/report.aspx?eventtype=TC&eventid=1001254&sourceid=JTWC",
+      "source_name": "GDACS"
+    },
+    {
+      "name": "Storm Kristin",
+      "disaster_type": "hurricane",
+      "severity": "high",
+      "occurred_at": "2026-01-28T12:00:00Z",
+      "location": "Leiria, Central Portugal",
+      "country": "Portugal",
+      "region": "Western Europe",
+      "latitude": 39.74,
+      "longitude": -8.81,
+      "source_url": "https://www.bbc.com/news/articles/c205yl3kvzmo",
+      "source_name": "BBC News"
+    }
+  ]
+}
