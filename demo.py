@@ -13,7 +13,7 @@ app = FirecrawlApp(api_key="fc-29a5fd3db63d4b1fb909b232de75a074")
 resend.api_key = "re_MPbsi958_26tHbygWsVLXT6W9rMmdDqkD"
 
 SEND_TO_DEMO_EMAIL = True
-DEMO_EMAIL = "emergencydisasterdemo@gmail.com"
+DEMO_EMAIL = "pls.leave.me.alone123@gmail.com"
 NUM_DISASTERS = 2
 NUM_NGOS = 2
 
@@ -80,7 +80,7 @@ def find_disasters() -> DisasterList:
         time.sleep(5)
         return DisasterList(disasters=[])
     else:
-        return app.agent(
+        response = app.agent(
             prompt=f'''
             Search news sources for the {NUM_DISASTERS} most significant global disasters that occurred in the LAST 24 HOURS ONLY.
             CRITICAL: Only include disasters that started or significantly escalated within the past 24 hours. 
@@ -92,6 +92,7 @@ def find_disasters() -> DisasterList:
             schema=DisasterList,
             model="spark-1-pro"
         )
+        return DisasterList(**response.data)
 
 # for each disaster different function finds relevant NGOs
 def find_ngos(disaster: Disaster) -> NGOList:
@@ -100,26 +101,27 @@ def find_ngos(disaster: Disaster) -> NGOList:
         time.sleep(5)
         return NGOList(ngos=[])
     else:
-        return app.agent(
+        response = app.agent(
             prompt=f'''
             Find {NUM_NGOS} MAXIMUM distinct NGOs that could assist with this disaster: {disaster}
 
-            CRITICAL: You MUST find a real contact email for each NGO. Visit their website's contact page to find it.
-            - Only include NGOs where you can find an actual contact email address
-            - Skip any NGO if you cannot locate their email
-            - NO DUPLICATES
-            ''',
-            schema=NGOList,
-            model="spark-1-pro"
+        CRITICAL: You MUST find a real contact email for each NGO. Visit their website's contact page to find it.
+        - Only include NGOs where you can find an actual contact email address
+        - Skip any NGO if you cannot locate their email
+        - NO DUPLICATES
+        ''',
+        schema=NGOList,
+        model="spark-1-pro"
         )
+        return NGOList(**response.data)
 
 # for each NGO, email is sent with disaster information
 def send_emails(ngoDisasterList: List[Tuple[NGO, Disaster]]):
     params: List[resend.Emails.SendParams] = [
         {
             "from": "onboarding@resend.dev",
-            "to": [DEMO_EMAIL if SEND_TO_DEMO_EMAIL else ngo.email],
-            "subject": f"{"[to " + ngo.email + "] " if SEND_TO_DEMO_EMAIL else ""}Disaster Alert: {disaster.name}",
+            "to": [DEMO_EMAIL if SEND_TO_DEMO_EMAIL else ngo.contact_email],
+            "subject": f"{"[to " + ngo.contact_email + "] " if SEND_TO_DEMO_EMAIL else ""}Disaster Alert: {disaster.name}",
             "html": f"""
             <html>
             <body>
@@ -171,4 +173,4 @@ for disaster in disasterlist.disasters:
     ngoDisasterList.extend([(ngo, disaster) for ngo in ngos.ngos])
 print(f"Sending emails")
 print(ngoDisasterList)
-send_emails(ngoDisasterList)
+print(send_emails(ngoDisasterList))
