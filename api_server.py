@@ -84,12 +84,16 @@ async def run_pipeline_stream():
     
     # Step 1: Finding disasters
     yield f"data: {json.dumps({'type': 'status', 'step': 'disasters', 'status': 'loading'})}\n\n"
-    await asyncio.sleep(0.1)  # Allow event to be sent
+    await asyncio.sleep(0.3)
     
     disaster_list = await asyncio.to_thread(find_disasters)
-    disasters_data = [disaster_to_dict(d) for d in disaster_list.disasters]
     
-    yield f"data: {json.dumps({'type': 'disasters', 'data': disasters_data})}\n\n"
+    # Send disasters one by one
+    total_disasters = len(disaster_list.disasters)
+    for idx, disaster in enumerate(disaster_list.disasters):
+        yield f"data: {json.dumps({'type': 'disaster_found', 'index': idx, 'total': total_disasters, 'disaster': disaster_to_dict(disaster)})}\n\n"
+        await asyncio.sleep(0.35)
+    
     yield f"data: {json.dumps({'type': 'status', 'step': 'disasters', 'status': 'complete'})}\n\n"
     
     # Step 2: Finding NGOs for each disaster

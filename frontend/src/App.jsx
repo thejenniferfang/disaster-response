@@ -65,8 +65,9 @@ export default function App() {
           setStep(data.step)
           setStepStatus(prev => ({ ...prev, [data.step]: data.status }))
           break
-        case 'disasters':
-          setDisasters(data.data)
+        case 'disaster_found':
+          setDisasters(prev => [...prev, data.disaster])
+          setProgressText(`Found ${data.index + 1} of ${data.total} disasters...`)
           break
         case 'ngo_progress':
           setProgressText(`Finding NGOs for ${data.disaster_name}...`)
@@ -129,7 +130,7 @@ export default function App() {
               <circle cx="12" cy="12" r="10" />
               <path d="M12 6v6l4 2" />
             </svg>
-            Runs every 30 min
+            Runs every 90 min
           </span>
           <button
             className="start-btn"
@@ -149,7 +150,9 @@ export default function App() {
             <span className="step-title">Fetch Recent Disasters</span>
             {stepStatus.disasters && (
               <span className="step-status">
-                {stepStatus.disasters === 'loading' ? 'Searching...' : `${disasters.length} found`}
+                {stepStatus.disasters === 'loading'
+                  ? `${disasters.length} found...`
+                  : `${disasters.length} found`}
               </span>
             )}
           </div>
@@ -170,7 +173,7 @@ export default function App() {
                 </thead>
                 <tbody>
                   {disasters.map((d, i) => (
-                    <tr key={i}>
+                    <tr key={i} className="animate-row">
                       <td>{d.name}</td>
                       <td>{d.disaster_type}</td>
                       <td>{d.location}, {d.country}</td>
